@@ -1,0 +1,68 @@
+/*app/globals.css*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+
+    .segmentContainer {
+        @apply flex-row items-center justify-between bg-[#F6F6F6] rounded-xl h-11 mx-3 mt-5 mb-4 px-1;
+    }
+
+    .segmentButton {
+        @apply flex-1 items-center justify-center h-9 mx-1 rounded-lg bg-transparent;
+    }
+
+    .segmentButtonActive {
+        @apply bg-white shadow-sm shadow-black/10;
+    }
+
+    .segmentText {
+        @apply text-base text-[#B0B0B0] font-quicksand-medium;
+    }
+
+    .segmentTextActive {
+        @apply text-dark-100 font-quicksand-bold;
+    }
+
+    .customCard {
+        @apply bg-[#F6F6F6] rounded-2xl px-[18px] py-[18px] mx-3 mt-0 mb-7;
+    }
+
+    .sectionTitle {
+        @apply text-sm text-dark-100 font-quicksand-medium mb-1;
+    }
+
+    .cardValue {
+        @apply text-[32px] text-dark-100 font-quicksand-bold mb-1;
+    }
+
+    .cardLabel {
+        @apply text-sm text-[#B0B0B0] font-quicksand mr-2;
+    }
+
+    .cardPercentage {
+        @apply text-sm text-success font-quicksand-medium;
+    }
+
+    .summaryTitle {
+        @apply text-[17px] text-dark-100 font-quicksand-bold mb-2 mx-4;
+    }
+
+    .summaryCard {
+        @apply bg-[#F6F6F6] rounded-xl px-[18px] py-[10px] mx-3 mb-8;
+    }
+
+    .summaryRow {
+        @apply flex-row justify-between items-center py-[6px];
+    }
+
+    .summaryLabel {
+        @apply text-base text-[#B0B0B0] font-quicksand;
+    }
+
+    .summaryValue {
+        @apply text-base text-dark-100 font-quicksand-medium;
+    }
+
+}
