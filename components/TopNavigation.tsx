@@ -1,57 +1,45 @@
-
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const ROUTE_TITLES: Record<string, string> = {
-    '/(tabs)': 'Dashboard',
-    '/(tabs)/cash-flow': 'Cash Flow',
-    '/(tabs)/budget': 'Budget',
-    '/(tabs)/investments': 'Investments',
-    '/(tabs)/chatbot': 'Chatbot',
-    '/(tabs)/index': 'Dashboard',
+    '/': 'Dashboard',
+    '/cash-flow': 'Cash Flow',
+    '/budget': 'Budget',
+    '/investments': 'Investments',
+    '/chatbot': 'Chatbot',
+    '/index': 'Dashboard',
 };
 
 export default function TopNavigation() {
     const pathname = usePathname();
     const router = useRouter();
-    const shouldShowBack = pathname !== '/(tabs)' && pathname !== '/(tabs)/index';
 
-    // Determine the title based on the pathname
-    let title = 'Dashboard';
-    if (pathname === '/(tabs)/index' || pathname === '/(tabs)') {
-        title = 'Dashboard';
-    } else {
-        // Find the matching route title
-        for (const route in ROUTE_TITLES) {
-            if (pathname.startsWith(route)) {
-                title = ROUTE_TITLES[route];
-                break;
-            }
-        }
-    }
+    const shouldShowBack = pathname !== '/' && pathname !== '/index';
+
+    // Normalize pathname by removing trailing slash if present (except root '/')
+    const normalizedPathname = pathname && pathname !== '/' && pathname.endsWith('/')
+        ? pathname.slice(0, -1)
+        : pathname;
+
+    // Find matched route key by matching normalized pathname with route keys
+    const matchedRoute = Object.keys(ROUTE_TITLES)
+        .filter((route) => normalizedPathname && normalizedPathname.startsWith(route))
+        .sort((a, b) => b.length - a.length)[0];
+
+    const title = matchedRoute ? ROUTE_TITLES[matchedRoute] : '';
 
     return (
         <View style={styles.header}>
             <View style={styles.leadingContainer}>
                 {shouldShowBack && (
-                    <Pressable
-                        onPress={() => router.back()}
-                        style={styles.backButton}
-                    >
-                        <MaterialCommunityIcons
-                            name="arrow-left"
-                            size={24}
-                            color="#141414"
-                        />
+                    <Pressable onPress={() => router.back()} style={styles.backButton}>
+                        <MaterialCommunityIcons name="chevron-left" size={24} color="#141414" />
                     </Pressable>
                 )}
             </View>
-
             <Text style={styles.title}>{title}</Text>
-
-            {/* Empty view for alignment */}
             <View style={styles.trailingContainer} />
         </View>
     );
