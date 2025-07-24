@@ -373,6 +373,7 @@ export default function DashboardScreen() {
             <View style={{ flex: 1 }}>
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#101518' }}>Upload Transactions</Text>
                     <TouchableOpacity
                         style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
                         onPress={pickImageAndUpload}
