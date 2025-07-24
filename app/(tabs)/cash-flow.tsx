@@ -165,8 +165,8 @@ export default function CashFlowScreen() {
                 <FlatList
                     data={transactions.filter((t) => {
                         if (selectedFilter === 'All') return true;
-                        if (selectedFilter === 'Income') return t.amount > 0;
-                        if (selectedFilter === 'Expenses') return t.amount < 0;
+                        if (selectedFilter === 'Income') return t.type.toLowerCase() === 'credit';
+                        if (selectedFilter === 'Expenses') return t.type.toLowerCase() === 'debit';
                         return true;
                     })}
                     keyExtractor={(item, index) => index.toString()}

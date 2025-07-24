@@ -295,38 +295,6 @@ export default function DashboardScreen() {
                         </View>
                     </View>
 
-                    {/* Transactions Section */}
-                    <Text style={{ fontSize: 22, fontWeight: '700', color: '#101518', marginBottom: 12 }}>Transactions</Text>
-                    <ScrollView horizontal style={{ marginBottom: 24 }}>
-                        {transactions.length === 0 ? (
-                            <Text style={{ color: '#6b7280' }}>No transactions found.</Text>
-                        ) : (
-                            <View style={{ minWidth: 800, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 12, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
-                                <View style={{ flexDirection: 'row', backgroundColor: '#f3f4f6', borderBottomWidth: 1, borderColor: '#d1d5db', position: 'sticky', top: 0, zIndex: 10 }}>
-                                    <Text style={{ flex: 1, minWidth: 80, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Type</Text>
-                                    <Text style={{ flex: 1, minWidth: 80, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Date</Text>
-                                    <Text style={{ flex: 1, minWidth: 100, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Amount</Text>
-                                    <Text style={{ flex: 2, minWidth: 160, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Description</Text>
-                                    <Text style={{ flex: 1, minWidth: 120, padding: 16, fontWeight: '600', flexShrink: 0, flexWrap: 'wrap' }}>Predicted Category</Text>
-                                </View>
-                                {transactions.map((item, index) => (
-                                    <View
-                                        key={index}
-                                        style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#d1d5db', backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
-                                    >
-                                        <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.type}</Text>
-                                        <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatDate(item.date)}</Text>
-                                        <Text style={{ flex: 1, minWidth: 100, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatAmount(item.amount)}</Text>
-                                        <Text style={{ flex: 2, minWidth: 160, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.description}</Text>
-                                        <Text style={{ flex: 1, minWidth: 120, padding: 16, flexShrink: 0, flexWrap: 'wrap', color: categoryColor(item["Predicted Category"]) }}>
-                                            {item["Predicted Category"] ? item["Predicted Category"] : 'N/A'}
-                                        </Text>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </ScrollView>
-
                     {/* Predicted Categories Section */}
                     <Text style={{ fontSize: 22, fontWeight: '700', color: '#101518', marginBottom: 12 }}>Predicted Categories</Text>
                     <View style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 16 }}>
