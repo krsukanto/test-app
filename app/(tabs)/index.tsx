@@ -373,14 +373,13 @@ export default function DashboardScreen() {
             <View style={{ flex: 1 }}>
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'space-between' }}>
-                    <View style={{ flex: 1 }} />
                     <TouchableOpacity
                         style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
                         onPress={pickImageAndUpload}
                         disabled={uploading}
                     >
-                        <Svg width={24} height={24} fill="#101518" viewBox="0 0 256 256">
-                            <Path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
+                        <Svg width={24} height={24} fill="#101518" viewBox="0 0 24 24">
+                            <Path d="M19 15v4H5v-4H3v4a2 2 0 002 2h14a2 2 0 002-2v-4h-2zM12 3l-5 5h3v6h4v-6h3l-5-5z" />
                         </Svg>
                     </TouchableOpacity>
                 </View>
