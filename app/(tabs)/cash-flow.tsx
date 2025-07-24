@@ -122,8 +122,8 @@ export default function CashFlowScreen() {
                 <Text style={styles.transactionCategory}>Predicted: {item["Predicted Category"]}</Text>
             </View>
             <View>
-                <Text style={[styles.transactionAmount, item.amount < 0 ? styles.amountNegative : styles.amountPositive]}>
-                    {item.amount < 0 ? '-' : '+'}{formatAmount(Math.abs(item.amount))}
+                <Text style={[styles.transactionAmount, item.type.toLowerCase() === 'debit' ? styles.amountNegative : styles.amountPositive]}>
+                    {item.type.toLowerCase() === 'debit' ? '-' : '+'}{formatAmount(Math.abs(item.amount))}
                 </Text>
             </View>
         </View>
@@ -280,9 +280,9 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     amountPositive: {
-        color: '#0d151c',
+        color: '#15803d', // green-700
     },
     amountNegative: {
-        color: '#0d151c',
+        color: '#b91c1c', // red-600
     },
 });
