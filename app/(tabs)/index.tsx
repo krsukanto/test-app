@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart } from 'react-native-chart-kit';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Transaction {
     type: string;
@@ -140,24 +141,37 @@ export default function DashboardScreen() {
         return { pieDataCount, pieDataAmount, pieDataByCategory };
     }
 
-    useEffect(() => {
-        async function fetchTransactions() {
-            try {
-                const response = await fetch('https://my-budget-app-4070447009.us-central1.run.app/transactions');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            async function fetchTransactions() {
+                try {
+                    const response = await fetch('https://my-budget-app-4070447009.us-central1.run.app/transactions');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+                    if (isActive) {
+                        setTransactions(data);
+                        setError(null);
+                    }
+                } catch (err) {
+                    const error = err as Error;
+                    if (isActive) {
+                        setError(error.message);
+                    }
+                } finally {
+                    if (isActive) {
+                        setLoading(false);
+                    }
                 }
-                const data = await response.json();
-                setTransactions(data);
-            } catch (err) {
-                const error = err as Error;
-                setError(error.message);
-            } finally {
-                setLoading(false);
             }
-        }
-        fetchTransactions();
-    }, []);
+            fetchTransactions();
+            return () => {
+                isActive = false;
+            };
+        }, [])
+    );
 
     if (loading) {
         return (
