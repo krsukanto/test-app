@@ -24,15 +24,38 @@ export default function DashboardScreen() {
         if (!dateString) {
             return 'N/A';
         }
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) {
-            return 'N/A';
+
+        // Try parsing with Date constructor
+        let date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+            });
         }
-        return date.toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-        });
+
+        // Try parsing dd-mm-yy or dd-mm-yyyy formats
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            let day = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10) - 1; // JS months 0-based
+            let year = parseInt(parts[2], 10);
+            if (year < 100) {
+                // Handle two-digit year
+                year += year >= 70 ? 1900 : 2000;
+            }
+            date = new Date(year, month, day);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                });
+            }
+        }
+
+        return 'N/A';
     }
 
     // Format amount as currency
