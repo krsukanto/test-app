@@ -310,7 +310,18 @@ export default function DashboardScreen() {
             const responseData = await uploadResponse.json();
             Alert.alert("Upload successful", "Image uploaded and processed successfully.");
 
-            // Optionally, you can update transactions or UI based on responseData here
+            // Call predict_file API after successful upload
+            try {
+                const predictResponse = await fetch('https://my-budget-app-4070447009.us-central1.run.app/predict_file?filename=transactions.csv&folder=database');
+                if (!predictResponse.ok) {
+                    throw new Error('Prediction API response was not ok');
+                }
+                const predictData = await predictResponse.json();
+                // Optionally handle predictData here
+            } catch (predictErr) {
+                const error = predictErr as Error;
+                console.error('Prediction API call failed:', error.message);
+            }
 
         } catch (err) {
             const error = err as Error;
