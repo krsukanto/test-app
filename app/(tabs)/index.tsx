@@ -350,10 +350,26 @@ export default function DashboardScreen() {
 
     const { totalIncome, totalExpenses, netProfit, pieDataCount, pieDataAmount, pieDataByCategory } = calculateData();
 
-    // Calculate percentage changes for summary cards (dummy values for now)
-    const incomeChange = '+15%';
-    const expensesChange = '-10%';
-    const profitChange = '+25%';
+    // Calculate percentage changes for summary cards dynamically
+    let incomeChangeValue = 0;
+    let expensesChangeValue = 0;
+
+    if (totalIncome !== 0) {
+        incomeChangeValue = (totalIncome / (totalExpenses || 1) - 1) * 100;
+    }
+    if (totalExpenses !== 0) {
+        expensesChangeValue = (totalExpenses / (totalIncome || 1) - 1) * 100;
+    }
+
+    const incomeChange = (incomeChangeValue >= 0 ? '+' : '') + incomeChangeValue.toFixed(2) + '%';
+    const expensesChange = (expensesChangeValue >= 0 ? '+' : '') + expensesChangeValue.toFixed(2) + '%';
+
+    // Calculate profitChange percentage based on netProfit and totalIncome
+    let profitChangeValue = 0;
+    if (totalIncome !== 0) {
+        profitChangeValue = (netProfit / totalIncome) * 100;
+    }
+    const profitChange = (profitChangeValue >= 0 ? '+' : '') + profitChangeValue.toFixed(2) + '%';
 
     // Helper to get color for change text
     const changeColor = (change: string) => (change.startsWith('+') ? '#078838' : '#e73908');
@@ -408,7 +424,7 @@ export default function DashboardScreen() {
                         <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
                             <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Total Income</Text>
                             <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(totalIncome)}</Text>
-                            <Text style={{ color: changeColor(incomeChange), fontSize: 16, fontWeight: '500' }}>{incomeChange}</Text>
+                        {/* Removed incomeChange percentage display as per user request */}
                         </View>
                         <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
                             <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Total Expenses</Text>
@@ -418,7 +434,7 @@ export default function DashboardScreen() {
                         <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
                             <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Net Profit</Text>
                             <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(netProfit)}</Text>
-                            <Text style={{ color: changeColor(profitChange), fontSize: 16, fontWeight: '500' }}>{profitChange}</Text>
+                        <Text style={{ color: changeColor(profitChange), fontSize: 16, fontWeight: '500' }}>{profitChange}</Text>
                         </View>
                     </View>
 
