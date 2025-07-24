@@ -9,7 +9,7 @@ interface Transaction {
     date: string;
     amount: number;
     description: string;
-    predictedCategory: string;
+    "Predicted Category": string;
 }
 
 const screenWidth = Dimensions.get('window').width;
@@ -69,19 +69,34 @@ export default function DashboardScreen() {
     // Optional: color coding for predicted category
     function categoryColor(category: string | undefined): string {
         if (!category) {
-            return 'text-gray-100';
+            return '#9ca3af'; // gray-400
         }
-        switch (category.toLowerCase()) {
-            case 'food':
-                return 'text-green-600';
-            case 'transport':
-                return 'text-blue-600';
+        const cat = category.toLowerCase();
+        switch (cat) {
+            case 'cash inflow':
+                return '#15803d'; // green-700
+            case 'utilities expense':
+                return '#ca8a04'; // yellow-600
+            case 'utlities':
+                return '#ca8a04'; // yellow-600
+            case 'lending':
+                return '#4f46e5'; // indigo-600
             case 'entertainment':
-                return 'text-purple-600';
-            case 'bills':
-                return 'text-red-600';
+                return '#7c3aed'; // purple-600
+            case 'salary expense':
+                return '#1d4ed8'; // blue-700
+            case 'travel':
+                return '#db2777'; // pink-600
+            case 'misc expense':
+                return '#b91c1c'; // gray-600
+            case 'cash outflow':
+                return '#b91c1c'; // red-600
+            case 'inventory':
+                return '#0f766e'; // teal-600
+            case 'rental expense':
+                return '#db2777'; // pink-600
             default:
-                return 'text-gray-600';
+                return '#4b5563'; // gray-600
         }
     }
 
@@ -273,7 +288,9 @@ export default function DashboardScreen() {
                                     <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatDate(item.date)}</Text>
                                     <Text style={{ flex: 1, minWidth: 100, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatAmount(item.amount)}</Text>
                                     <Text style={{ flex: 2, minWidth: 160, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.description}</Text>
-                                    <Text style={{ flex: 1, minWidth: 120, padding: 16, flexShrink: 0, flexWrap: 'wrap', color: categoryColor(item.predictedCategory) }}>{item.predictedCategory}</Text>
+                                    <Text style={{ flex: 1, minWidth: 120, padding: 16, flexShrink: 0, flexWrap: 'wrap', color: categoryColor(item["Predicted Category"]) }}>
+                                        {item["Predicted Category"] ? item["Predicted Category"] : 'N/A'}
+                                    </Text>
                                 </View>
                             ))}
                         </View>
