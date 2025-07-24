@@ -21,13 +21,16 @@ export default function DashboardScreen() {
 
     // Format date string to readable format with fallback for invalid dates
     function formatDate(dateString: string): string {
+        if (!dateString) {
+            return 'N/A';
+        }
         const date = new Date(dateString);
         if (isNaN(date.getTime())) {
             return 'N/A';
         }
         return date.toLocaleDateString(undefined, {
             year: 'numeric',
-            month: 'short',
+            month: 'numeric',
             day: 'numeric',
         });
     }
@@ -194,12 +197,12 @@ export default function DashboardScreen() {
     return (
         <SafeAreaView className="flex-1 bg-white">
             <ScrollView>
-                <View className="flex-row justify-around p-4">
-                    <View>
+                <View className="flex-col p-4">
+                    <View className="mb-6">
                         <Text className="text-center font-semibold mb-2">Debit vs Credit (Count)</Text>
                         <PieChart
                             data={pieDataCount}
-                            width={screenWidth / 2.2}
+                            width={screenWidth}
                             height={220}
                             chartConfig={{
                                 color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -214,7 +217,7 @@ export default function DashboardScreen() {
                         <Text className="text-center font-semibold mb-2">Categories (Amount)</Text>
                         <PieChart
                             data={pieDataByCategory}
-                            width={screenWidth / 2.2}
+                            width={screenWidth}
                             height={220}
                             chartConfig={{
                                 color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -230,26 +233,24 @@ export default function DashboardScreen() {
                     {transactions.length === 0 ? (
                         <Text className="text-center text-gray-500">No transactions found.</Text>
                     ) : (
-                        <View className="min-w-full border border-gray-300 rounded-lg bg-white shadow-md">
-                            <View className="flex-row bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
-                                <Text className="w-2/12 p-4 font-semibold border-r border-gray-300">Type</Text>
-                                <Text className="w-2/12 p-4 font-semibold border-r border-gray-300">Date</Text>
-                                <Text className="w-2/12 p-4 font-semibold border-r border-gray-300">Amount</Text>
-                                <Text className="w-3/12 p-4 font-semibold border-r border-gray-300">Description</Text>
-                                <Text className="w-3/12 p-4 font-semibold">Predicted Category</Text>
+                        <View style={{ minWidth: 800, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
+                            <View style={{ flexDirection: 'row', backgroundColor: '#f3f4f6', borderBottomWidth: 1, borderColor: '#d1d5db', position: 'sticky', top: 0, zIndex: 10 }}>
+                                <Text style={{ flex: 1, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>Type</Text>
+                                <Text style={{ flex: 1, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>Date</Text>
+                                <Text style={{ flex: 1, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>Amount</Text>
+                                <Text style={{ flex: 2, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>Description</Text>
+                                <Text style={{ flex: 1, padding: 16, fontWeight: '600', flexShrink: 1, flexWrap: 'wrap' }}>Predicted Category</Text>
                             </View>
                             {transactions.map((item, index) => (
                                 <View
                                     key={index}
-                                    className={`flex-row border-b border-gray-300 ${
-                                        index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                    }`}
+                                    style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#d1d5db', backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
                                 >
-                                    <Text className="w-2/12 p-4 border-r border-gray-300">{item.type}</Text>
-                                    <Text className="w-2/12 p-4 border-r border-gray-300">{formatDate(item.date)}</Text>
-                                    <Text className="w-2/12 p-4 border-r border-gray-300">{formatAmount(item.amount)}</Text>
-                                    <Text className="w-3/12 p-4 border-r border-gray-300">{item.description}</Text>
-                                    <Text className={`w-3/12 p-4 ${categoryColor(item.predictedCategory)}`}>{item.predictedCategory}</Text>
+                                    <Text style={{ flex: 1, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>{item.type}</Text>
+                                    <Text style={{ flex: 1, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>{formatDate(item.date)}</Text>
+                                    <Text style={{ flex: 1, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>{formatAmount(item.amount)}</Text>
+                                    <Text style={{ flex: 2, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 1, flexWrap: 'wrap' }}>{item.description}</Text>
+                                    <Text style={{ flex: 1, padding: 16, flexShrink: 1, flexWrap: 'wrap', color: categoryColor(item.predictedCategory) }}>{item.predictedCategory}</Text>
                                 </View>
                             ))}
                         </View>
