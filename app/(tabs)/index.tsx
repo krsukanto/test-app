@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart } from 'react-native-chart-kit';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import Svg, { Path } from 'react-native-svg';
 
 interface Transaction {
     type: string;
@@ -378,12 +379,9 @@ export default function DashboardScreen() {
                         onPress={pickImageAndUpload}
                         disabled={uploading}
                     >
-                        {/* Plus icon */}
-                        <View>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#101518" viewBox="0 0 256 256">
-                                <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
-                            </svg>
-                        </View>
+                        <Svg width={24} height={24} fill="#101518" viewBox="0 0 256 256">
+                            <Path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
+                        </Svg>
                     </TouchableOpacity>
                 </View>
 
