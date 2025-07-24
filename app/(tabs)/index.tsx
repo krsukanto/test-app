@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart } from 'react-native-chart-kit';
 import { useFocusEffect } from '@react-navigation/native';
@@ -25,7 +25,6 @@ export default function DashboardScreen() {
             return 'N/A';
         }
 
-        // Try parsing with Date constructor
         let date = new Date(dateString);
         if (!isNaN(date.getTime())) {
             return date.toLocaleDateString(undefined, {
@@ -35,14 +34,12 @@ export default function DashboardScreen() {
             });
         }
 
-        // Try parsing dd-mm-yy or dd-mm-yyyy formats
         const parts = dateString.split('-');
         if (parts.length === 3) {
             let day = parseInt(parts[0], 10);
-            let month = parseInt(parts[1], 10) - 1; // JS months 0-based
+            let month = parseInt(parts[1], 10) - 1;
             let year = parseInt(parts[2], 10);
             if (year < 100) {
-                // Handle two-digit year
                 year += year >= 70 ? 1900 : 2000;
             }
             date = new Date(year, month, day);
@@ -76,7 +73,6 @@ export default function DashboardScreen() {
             case 'cash inflow':
                 return '#15803d'; // green-700
             case 'utilities expense':
-                return '#ca8a04'; // yellow-600
             case 'utlities':
                 return '#ca8a04'; // yellow-600
             case 'lending':
@@ -88,7 +84,6 @@ export default function DashboardScreen() {
             case 'travel':
                 return '#db2777'; // pink-600
             case 'misc expense':
-                return '#b91c1c'; // gray-600
             case 'cash outflow':
                 return '#b91c1c'; // red-600
             case 'inventory':
@@ -108,8 +103,12 @@ export default function DashboardScreen() {
         legendFontSize: number;
     }
 
-    // Calculate data for pie charts
-    function calculatePieData(): { pieDataCount: PieData[]; pieDataAmount: PieData[]; pieDataByCategory: PieData[] } {
+    // Calculate data for pie charts and summary cards
+    function calculateData() {
+        let totalIncome = 0;
+        let totalExpenses = 0;
+        let netProfit = 0;
+
         let debitCount = 0;
         let creditCount = 0;
         let debitAmount = 0;
@@ -119,24 +118,28 @@ export default function DashboardScreen() {
             if (t.type.toLowerCase() === 'debit') {
                 debitCount++;
                 debitAmount += t.amount;
+                totalExpenses += t.amount;
             } else if (t.type.toLowerCase() === 'credit') {
                 creditCount++;
                 creditAmount += t.amount;
+                totalIncome += t.amount;
             }
         });
+
+        netProfit = totalIncome - totalExpenses;
 
         const pieDataCount: PieData[] = [
             {
                 name: 'Debit',
                 population: debitCount,
-                color: '#f87171', // red-400
+                color: '#f87171',
                 legendFontColor: '#333',
                 legendFontSize: 14,
             },
             {
                 name: 'Credit',
                 population: creditCount,
-                color: '#60a5fa', // blue-400
+                color: '#60a5fa',
                 legendFontColor: '#333',
                 legendFontSize: 14,
             },
@@ -159,10 +162,9 @@ export default function DashboardScreen() {
             },
         ];
 
-        // New pie data categorized by predictedCategory and amount
         const categoryMap: { [key: string]: number } = {};
         transactions.forEach((t) => {
-            const category = t.predictedCategory || 'Unknown';
+            const category = t["Predicted Category"] || 'Unknown';
             if (!categoryMap[category]) {
                 categoryMap[category] = 0;
             }
@@ -179,7 +181,7 @@ export default function DashboardScreen() {
             legendFontSize: 14,
         }));
 
-        return { pieDataCount, pieDataAmount, pieDataByCategory };
+        return { totalIncome, totalExpenses, netProfit, pieDataCount, pieDataAmount, pieDataByCategory };
     }
 
     useFocusEffect(
@@ -230,73 +232,118 @@ export default function DashboardScreen() {
         );
     }
 
-    const { pieDataCount, pieDataAmount, pieDataByCategory } = calculatePieData();
+    const { totalIncome, totalExpenses, netProfit, pieDataCount, pieDataAmount, pieDataByCategory } = calculateData();
+
+    // Calculate percentage changes for summary cards (dummy values for now)
+    const incomeChange = '+15%';
+    const expensesChange = '-10%';
+    const profitChange = '+25%';
+
+    // Helper to get color for change text
+    const changeColor = (change: string) => (change.startsWith('+') ? '#078838' : '#e73908');
+
+    // Calculate category percentages dynamically from transactions
+    const categoryAmounts: { [key: string]: number } = {};
+    let totalCategoryAmount = 0;
+    transactions.forEach((t) => {
+        const category = t["Predicted Category"] || 'Unknown';
+        if (!categoryAmounts[category]) {
+            categoryAmounts[category] = 0;
+        }
+        categoryAmounts[category] += t.amount;
+        totalCategoryAmount += t.amount;
+    });
+
+    const categoryPercentages: { [key: string]: number } = {};
+    Object.entries(categoryAmounts).forEach(([category, amount]) => {
+        categoryPercentages[category] = totalCategoryAmount > 0 ? (amount / totalCategoryAmount) * 100 : 0;
+    });
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <ScrollView>
-                <View className="flex-col p-4">
-                    <View className="mb-6">
-                        <Text className="text-center font-semibold mb-2">Debit vs Credit (Count)</Text>
-                        <PieChart
-                            data={pieDataCount}
-                            width={screenWidth}
-                            height={220}
-                            chartConfig={{
-                                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                            }}
-                            accessor="population"
-                            backgroundColor="transparent"
-                            paddingLeft="15"
-                            absolute
-                        />
-                    </View>
-                    <View>
-                        <Text className="text-center font-semibold mb-2">Categories (Amount)</Text>
-                        <PieChart
-                            data={pieDataByCategory}
-                            width={screenWidth}
-                            height={220}
-                            chartConfig={{
-                                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                            }}
-                            accessor="population"
-                            backgroundColor="transparent"
-                            paddingLeft="15"
-                            absolute
-                        />
-                    </View>
-                </View>
-                <ScrollView horizontal className="p-4">
-                    {transactions.length === 0 ? (
-                        <Text className="text-center text-gray-500">No transactions found.</Text>
-                    ) : (
-                        <View style={{ minWidth: 800, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
-                            <View style={{ flexDirection: 'row', backgroundColor: '#f3f4f6', borderBottomWidth: 1, borderColor: '#d1d5db', position: 'sticky', top: 0, zIndex: 10 }}>
-                                <Text style={{ flex: 1, minWidth: 80, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Type</Text>
-                                <Text style={{ flex: 1, minWidth: 80, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Date</Text>
-                                <Text style={{ flex: 1, minWidth: 100, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Amount</Text>
-                                <Text style={{ flex: 2, minWidth: 160, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Description</Text>
-                                <Text style={{ flex: 1, minWidth: 120, padding: 16, fontWeight: '600', flexShrink: 0, flexWrap: 'wrap' }}>Predicted Category</Text>
-                            </View>
-                            {transactions.map((item, index) => (
-                                <View
-                                    key={index}
-                                    style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#d1d5db', backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
-                                >
-                                    <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.type}</Text>
-                                    <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatDate(item.date)}</Text>
-                                    <Text style={{ flex: 1, minWidth: 100, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatAmount(item.amount)}</Text>
-                                    <Text style={{ flex: 2, minWidth: 160, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.description}</Text>
-                                    <Text style={{ flex: 1, minWidth: 120, padding: 16, flexShrink: 0, flexWrap: 'wrap', color: categoryColor(item["Predicted Category"]) }}>
-                                        {item["Predicted Category"] ? item["Predicted Category"] : 'N/A'}
-                                    </Text>
-                                </View>
-                            ))}
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
+            <View style={{ flex: 1 }}>
+                {/* Header */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'space-between' }}>
+                    <View style={{ flex: 1 }} />
+                    <TouchableOpacity style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+                        {/* Plus icon */}
+                        <View>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#101518" viewBox="0 0 256 256">
+                                <path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
+                            </svg>
                         </View>
-                    )}
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView contentContainerStyle={{ padding: 16 }}>
+                    {/* Summary Cards */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginRight: 8 }}>
+                            <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Total Income</Text>
+                            <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(totalIncome)}</Text>
+                            <Text style={{ color: changeColor(incomeChange), fontSize: 16, fontWeight: '500' }}>{incomeChange}</Text>
+                        </View>
+                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4 }}>
+                            <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Total Expenses</Text>
+                            <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(totalExpenses)}</Text>
+                            <Text style={{ color: changeColor(expensesChange), fontSize: 16, fontWeight: '500' }}>{expensesChange}</Text>
+                        </View>
+                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginLeft: 8 }}>
+                            <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Net Profit</Text>
+                            <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(netProfit)}</Text>
+                            <Text style={{ color: changeColor(profitChange), fontSize: 16, fontWeight: '500' }}>{profitChange}</Text>
+                        </View>
+                    </View>
+
+                    {/* Transactions Section */}
+                    <Text style={{ fontSize: 22, fontWeight: '700', color: '#101518', marginBottom: 12 }}>Transactions</Text>
+                    <ScrollView horizontal style={{ marginBottom: 24 }}>
+                        {transactions.length === 0 ? (
+                            <Text style={{ color: '#6b7280' }}>No transactions found.</Text>
+                        ) : (
+                            <View style={{ minWidth: 800, borderWidth: 1, borderColor: '#d1d5db', borderRadius: 12, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }}>
+                                <View style={{ flexDirection: 'row', backgroundColor: '#f3f4f6', borderBottomWidth: 1, borderColor: '#d1d5db', position: 'sticky', top: 0, zIndex: 10 }}>
+                                    <Text style={{ flex: 1, minWidth: 80, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Type</Text>
+                                    <Text style={{ flex: 1, minWidth: 80, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Date</Text>
+                                    <Text style={{ flex: 1, minWidth: 100, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Amount</Text>
+                                    <Text style={{ flex: 2, minWidth: 160, padding: 16, fontWeight: '600', borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>Description</Text>
+                                    <Text style={{ flex: 1, minWidth: 120, padding: 16, fontWeight: '600', flexShrink: 0, flexWrap: 'wrap' }}>Predicted Category</Text>
+                                </View>
+                                {transactions.map((item, index) => (
+                                    <View
+                                        key={index}
+                                        style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#d1d5db', backgroundColor: index % 2 === 0 ? '#f9fafb' : '#ffffff' }}
+                                    >
+                                        <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.type}</Text>
+                                        <Text style={{ flex: 1, minWidth: 80, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatDate(item.date)}</Text>
+                                        <Text style={{ flex: 1, minWidth: 100, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{formatAmount(item.amount)}</Text>
+                                        <Text style={{ flex: 2, minWidth: 160, padding: 16, borderRightWidth: 1, borderColor: '#d1d5db', flexShrink: 0, flexWrap: 'wrap' }}>{item.description}</Text>
+                                        <Text style={{ flex: 1, minWidth: 120, padding: 16, flexShrink: 0, flexWrap: 'wrap', color: categoryColor(item["Predicted Category"]) }}>
+                                            {item["Predicted Category"] ? item["Predicted Category"] : 'N/A'}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </ScrollView>
+
+                    {/* Predicted Categories Section */}
+                    <Text style={{ fontSize: 22, fontWeight: '700', color: '#101518', marginBottom: 12 }}>Predicted Categories</Text>
+                    <View style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 16 }}>
+                        <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 8 }}>Category Breakdown</Text>
+                        <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(totalExpenses)}</Text>
+                        <Text style={{ color: '#6b7280', fontSize: 14, marginBottom: 12 }}>This Month</Text>
+                        {Object.entries(categoryPercentages).map(([category, percent]) => (
+                            <View key={category} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={{ color: '#6b7280', fontSize: 13, fontWeight: '700', width: 80 }}>{category}</Text>
+                                <View style={{ flex: 1, height: 20, backgroundColor: '#eaedf1', borderRadius: 4, overflow: 'hidden' }}>
+                                    <View style={{ width: `${percent}%`, height: '100%', backgroundColor: '#5c748a', borderRightWidth: 2, borderRightColor: '#eaedf1' }} />
+                                </View>
+                            </View>
+                        ))}
+                    </View>
                 </ScrollView>
-            </ScrollView>
+            </View>
         </SafeAreaView>
     );
 }

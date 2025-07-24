@@ -1,193 +1,288 @@
-// app/(tabs)/cash-flow.tsx
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
-import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions } from 'react-native';
-import { BarChart } from 'react-native-chart-kit';
-
-const periods = ['Daily', 'Weekly', 'Monthly'];
+interface Transaction {
+    type: string;
+    date: string;
+    amount: number;
+    description: string;
+    "Predicted Category": string;
+}
 
 export default function CashFlowScreen() {
-    const [selectedPeriod, setSelectedPeriod] = React.useState('Monthly');
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedFilter, setSelectedFilter] = useState('All');
 
-    const chartData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [{ data: [90, 60, 60, 70, 60, 40] }],
-    };
+    // Format date string to readable format with fallback for invalid dates
+    function formatDate(dateString: string): string {
+        if (!dateString) {
+            return 'N/A';
+        }
+
+        let date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+            });
+        }
+
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            let day = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10) - 1;
+            let year = parseInt(parts[2], 10);
+            if (year < 100) {
+                year += year >= 70 ? 1900 : 2000;
+            }
+            date = new Date(year, month, day);
+            if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                });
+            }
+        }
+
+        return 'N/A';
+    }
+
+    // Format amount as currency
+    function formatAmount(amount: number): string {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: 'INR',
+        }).format(amount);
+    }
+
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            async function fetchTransactions() {
+                try {
+                    const response = await fetch('https://my-budget-app-4070447009.us-central1.run.app/transactions');
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+                    if (isActive) {
+                        setTransactions(data);
+                        setError(null);
+                    }
+                } catch (err) {
+                    const error = err as Error;
+                    if (isActive) {
+                        setError(error.message);
+                    }
+                } finally {
+                    if (isActive) {
+                        setLoading(false);
+                    }
+                }
+            }
+            fetchTransactions();
+            return () => {
+                isActive = false;
+            };
+        }, [])
+    );
+
+    const filters = ['All', 'Income', 'Expenses'];
+
+    const renderFilter = (filter: string) => (
+        <TouchableOpacity
+            key={filter}
+            style={[
+                styles.filterButton,
+                selectedFilter === filter && styles.filterButtonSelected,
+            ]}
+            onPress={() => setSelectedFilter(filter)}
+        >
+            <Text
+                style={[
+                    styles.filterText,
+                    selectedFilter === filter && styles.filterTextSelected,
+                ]}
+            >
+                {filter}
+            </Text>
+        </TouchableOpacity>
+    );
+
+    const renderTransaction = ({ item }: { item: Transaction }) => (
+        <View style={styles.transactionRow}>
+            <View style={styles.transactionInfo}>
+                <Text style={styles.transactionDate}>{formatDate(item.date)}</Text>
+                <Text style={styles.transactionCategory}>Predicted: {item["Predicted Category"]}</Text>
+            </View>
+            <View>
+                <Text style={[styles.transactionAmount, item.amount < 0 ? styles.amountNegative : styles.amountPositive]}>
+                    {item.amount < 0 ? '-' : '+'}{formatAmount(Math.abs(item.amount))}
+                </Text>
+            </View>
+        </View>
+    );
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView style={styles.loadingContainer}>
+                <Text style={styles.errorText}>Error: {error}</Text>
+            </SafeAreaView>
+        );
+    }
 
     return (
-        <ScrollView className="flex-1 bg-white" contentContainerStyle={{ paddingBottom: 24 }}>
-            {/* Period selection */}
-            <View className="flex-row bg-gray-100 rounded-xl mx-3 mt-5 mb-4 h-11 items-center justify-between px-1">
-                {periods.map((period) => (
-                    <Pressable
-                        key={period}
-                        className={`flex-1 items-center h-9 mx-1 rounded-lg justify-center ${selectedPeriod === period ? 'bg-white shadow-md shadow-black/10' : 'bg-transparent'}`}
-                        onPress={() => setSelectedPeriod(period)}
-                    >
-                        <Text className={`text-base font-quicksand-medium ${selectedPeriod === period ? 'text-black font-quicksand-bold' : 'text-gray-400'}`}>
-                            {period}
-                        </Text>
-                    </Pressable>
-                ))}
-            </View>
-
-            {/* Cash Flow Card */}
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Cash Flow</Text>
-                <Text style={styles.value}>$1,200</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                    <Text style={styles.cardLabel}>Last 30 Days</Text>
-                    <Text style={styles.cardGreen}>+15%</Text>
+        <SafeAreaView style={styles.container}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                <Text style={styles.sectionTitle}>Filters</Text>
+                <View style={styles.filtersContainer}>
+                    {filters.map(renderFilter)}
                 </View>
-                <BarChart
-                    data={chartData}
-                    width={Dimensions.get('window').width - 48}
-                    height={170}
-                    fromZero
-                    showValuesOnTopOfBars={false}
-                    yAxisLabel=""
-                    yAxisSuffix=""
-                    chartConfig={{
-                        backgroundColor: '#f6f6f6',
-                        backgroundGradientFrom: '#f6f6f6',
-                        backgroundGradientTo: '#f6f6f6',
-                        decimalPlaces: 0,
-                        color: (opacity = 1) => `rgba(34, 34, 34, ${opacity})`,
-                        labelColor: () => "#B0B0B0",
-                        propsForLabels: { fontFamily: "quicksand-medium" },
-                        barPercentage: 0.6,
-                        propsForBackgroundLines: {
-                            strokeDasharray: "", stroke: "#EBEBEB"
-                        },
-                    }}
-                    style={{
-                        marginVertical: 0,
-                        borderRadius: 16,
-                        backgroundColor: "#f6f6f6",
-                    }}
-                    withInnerLines
+                <View style={styles.dropdownContainer}>
+                    <TouchableOpacity style={styles.dropdownButton}>
+                        <Text style={styles.dropdownText}>Date</Text>
+                        <Text style={styles.caretDown}>▼</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.dropdownButton}>
+                        <Text style={styles.dropdownText}>Category</Text>
+                        <Text style={styles.caretDown}>▼</Text>
+                    </TouchableOpacity>
+                </View>
+                <FlatList
+                    data={transactions.filter((t) => {
+                        if (selectedFilter === 'All') return true;
+                        if (selectedFilter === 'Income') return t.amount > 0;
+                        if (selectedFilter === 'Expenses') return t.amount < 0;
+                        return true;
+                    })}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={renderTransaction}
+                    contentContainerStyle={{ paddingHorizontal: 16 }}
+                    scrollEnabled={false}
                 />
-            </View>
-
-            {/* Summary Title */}
-            <Text style={styles.summaryTitle}>Summary</Text>
-
-            {/* Summary Card */}
-            <View style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Total Deposits</Text>
-                    <Text style={styles.summaryValue}>$5,500</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                    <Text style={styles.summaryLabel}>Total Expenditures</Text>
-                    <Text style={styles.summaryValue}>$4,300</Text>
-                </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    segmentContainer: {
-        flexDirection: 'row',
-        backgroundColor: '#F6F6F6',
-        borderRadius: 16,
-        marginHorizontal: 12,
-        marginTop: 20,
-        marginBottom: 16,
-        height: 44,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 4,
-    },
-    segmentButton: {
+    container: {
+        backgroundColor: '#f8fafc',
         flex: 1,
-        alignItems: 'center',
-        height: 36,
-        marginHorizontal: 2,
-        borderRadius: 12,
+    },
+    loadingContainer: {
+        flex: 1,
         justifyContent: 'center',
-        backgroundColor: 'transparent',
-    },
-    segmentButtonActive: {
+        alignItems: 'center',
         backgroundColor: '#fff',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 },
     },
-    segmentText: {
-        color: '#B0B0B0',
+    errorText: {
+        color: 'red',
         fontSize: 16,
-        fontFamily: 'quicksand-medium',
-    },
-    segmentTextActive: {
-        color: '#141414',
-        fontFamily: 'quicksand-bold',
-    },
-
-    card: {
-        backgroundColor: '#F6F6F6',
-        marginHorizontal: 12,
-        borderRadius: 16,
-        padding: 18,
-        marginBottom: 28,
-        marginTop: 0,
     },
     sectionTitle: {
-        fontSize: 15,
-        color: "#141414",
-        fontFamily: 'quicksand-medium',
-        marginBottom: 4,
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0d151c',
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8,
     },
-    value: {
-        fontSize: 32,
-        fontFamily: 'quicksand-bold',
-        color: "#141414",
-        marginBottom: 1,
+    filtersContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 12,
+        paddingBottom: 12,
     },
-    cardLabel: {
-        fontFamily: "quicksand",
-        fontSize: 14,
-        color: "#B0B0B0",
+    filterButton: {
+        backgroundColor: '#e7edf4',
+        borderRadius: 9999,
+        paddingHorizontal: 16,
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 8,
     },
-    cardGreen: {
-        fontFamily: "quicksand-medium",
+    filterButtonSelected: {
+        backgroundColor: '#cbd5e1',
+    },
+    filterText: {
+        color: '#0d151c',
         fontSize: 14,
-        color: "#44c185",
+        fontWeight: '500',
     },
-
-    summaryTitle: {
-        fontFamily: "quicksand-bold",
-        fontSize: 17,
-        color: "#141414",
-        marginBottom: 8,
-        marginHorizontal: 16,
+    filterTextSelected: {
+        fontWeight: '700',
     },
-    summaryCard: {
-        backgroundColor: "#F6F6F6",
-        borderRadius: 14,
-        paddingHorizontal: 18,
-        paddingVertical: 10,
-        marginHorizontal: 12,
-        marginBottom: 32,
+    dropdownContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 12,
+        paddingBottom: 12,
+        gap: 12,
     },
-    summaryRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 6,
+    dropdownButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#e7edf4',
+        borderRadius: 9999,
+        paddingHorizontal: 16,
+        height: 32,
+        justifyContent: 'center',
+        gap: 6,
     },
-    summaryLabel: {
-        fontFamily: "quicksand",
-        fontSize: 15,
-        color: "#B0B0B0",
+    dropdownText: {
+        color: '#0d151c',
+        fontSize: 14,
+        fontWeight: '500',
     },
-    summaryValue: {
-        fontFamily: "quicksand-medium",
-        fontSize: 15,
-        color: "#141414",
+    caretDown: {
+        color: '#0d151c',
+        fontSize: 12,
+    },
+    transactionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor: '#f8fafc',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e7edf4',
+        alignItems: 'center',
+    },
+    transactionInfo: {
+        flexDirection: 'column',
+    },
+    transactionDate: {
+        color: '#0d151c',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    transactionCategory: {
+        color: '#49749c',
+        fontSize: 14,
+        fontWeight: '400',
+    },
+    transactionAmount: {
+        fontSize: 16,
+        fontWeight: '400',
+    },
+    amountPositive: {
+        color: '#0d151c',
+    },
+    amountNegative: {
+        color: '#0d151c',
     },
 });
