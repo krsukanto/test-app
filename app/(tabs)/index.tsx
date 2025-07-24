@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart } from 'react-native-chart-kit';
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 
 interface Transaction {
     type: string;
@@ -18,6 +19,7 @@ export default function DashboardScreen() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
 
     // Format date string to readable format with fallback for invalid dates
     function formatDate(dateString: string): string {
@@ -114,7 +116,10 @@ export default function DashboardScreen() {
         let debitAmount = 0;
         let creditAmount = 0;
 
-        transactions.forEach((t) => {
+        // Defensive check: ensure transactions is an array
+        const txns = Array.isArray(transactions) ? transactions : [];
+
+        txns.forEach((t) => {
             if (t.type.toLowerCase() === 'debit') {
                 debitCount++;
                 debitAmount += t.amount;
@@ -163,7 +168,7 @@ export default function DashboardScreen() {
         ];
 
         const categoryMap: { [key: string]: number } = {};
-        transactions.forEach((t) => {
+        txns.forEach((t) => {
             const category = t["Predicted Category"] || 'Unknown';
             if (!categoryMap[category]) {
                 categoryMap[category] = 0;
@@ -195,7 +200,8 @@ export default function DashboardScreen() {
                     }
                     const data = await response.json();
                     if (isActive) {
-                        setTransactions(data);
+                        // Defensive check: ensure data is array
+                        setTransactions(Array.isArray(data) ? data : []);
                         setError(null);
                     }
                 } catch (err) {
@@ -215,6 +221,104 @@ export default function DashboardScreen() {
             };
         }, [])
     );
+
+    function base64ToBlob(base64: string, contentType = '', sliceSize = 512) {
+        const byteCharacters = atob(base64);
+        const byteArrays = [];
+
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+
+        return new Blob(byteArrays, { type: contentType });
+    }
+
+    async function pickImageAndUpload() {
+        // Request permission to access media library
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (permissionResult.granted === false) {
+            Alert.alert("Permission required", "Permission to access media library is required!");
+            return;
+        }
+
+        // Launch image picker
+        const pickerResult = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: false,
+            quality: 1,
+            base64: true,
+        });
+
+        if (pickerResult.canceled) {
+            return;
+        }
+
+        try {
+            setUploading(true);
+            setError(null);
+
+            const asset = pickerResult.assets && pickerResult.assets[0];
+            if (!asset || !asset.uri) {
+                throw new Error('No image selected');
+            }
+            let blob: Blob;
+            let filename = 'photo.jpg';
+            if (asset.uri.startsWith('data:')) {
+                // base64 data URI
+                const base64Data = asset.uri.split(',')[1];
+                const contentType = asset.uri.split(';')[0].split(':')[1];
+                blob = base64ToBlob(base64Data, contentType);
+                filename = `upload.${contentType.split('/')[1] || 'jpg'}`;
+            } else {
+                // file URI
+                let localUri = asset.uri;
+                if (!localUri.startsWith('file://')) {
+                    localUri = 'file://' + localUri;
+                }
+                const fileResponse = await fetch(localUri);
+                blob = await fileResponse.blob();
+                filename = localUri.split('/').pop() || 'photo.jpg';
+            }
+
+            const formData = new FormData();
+            // @ts-ignore
+            formData.append('file', blob, filename);
+
+            // Send POST request to API
+            const uploadResponse = await fetch('https://my-budget-app-4070447009.us-central1.run.app/extract-bill-with-document-ai', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    // Do not set Content-Type header; let fetch set it automatically
+                },
+                body: formData,
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error(`Upload failed with status ${uploadResponse.status}`);
+            }
+
+            const responseData = await uploadResponse.json();
+            Alert.alert("Upload successful", "Image uploaded and processed successfully.");
+
+            // Optionally, you can update transactions or UI based on responseData here
+
+        } catch (err) {
+            const error = err as Error;
+            setError(error.message);
+            Alert.alert("Upload failed", error.message);
+        } finally {
+            setUploading(false);
+        }
+    }
 
     if (loading) {
         return (
@@ -245,7 +349,11 @@ export default function DashboardScreen() {
     // Calculate category percentages dynamically from transactions
     const categoryAmounts: { [key: string]: number } = {};
     let totalCategoryAmount = 0;
-    transactions.forEach((t) => {
+
+    // Defensive check: ensure transactions is an array
+    const txns = Array.isArray(transactions) ? transactions : [];
+
+    txns.forEach((t) => {
         const category = t["Predicted Category"] || 'Unknown';
         if (!categoryAmounts[category]) {
             categoryAmounts[category] = 0;
@@ -265,7 +373,11 @@ export default function DashboardScreen() {
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'space-between' }}>
                     <View style={{ flex: 1 }} />
-                    <TouchableOpacity style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+                    <TouchableOpacity
+                        style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
+                        onPress={pickImageAndUpload}
+                        disabled={uploading}
+                    >
                         {/* Plus icon */}
                         <View>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#101518" viewBox="0 0 256 256">
@@ -274,6 +386,12 @@ export default function DashboardScreen() {
                         </View>
                     </TouchableOpacity>
                 </View>
+
+                {uploading && (
+                    <View style={{ padding: 10, backgroundColor: '#e0e0e0', alignItems: 'center' }}>
+                        <Text>Uploading image...</Text>
+                    </View>
+                )}
 
                 <ScrollView contentContainerStyle={{ padding: 16 }}>
                     {/* Summary Cards */}
