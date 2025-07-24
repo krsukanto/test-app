@@ -15,22 +15,16 @@ export default function CashFlowScreen() {
     };
 
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: "#fff" }} contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView className="flex-1 bg-white" contentContainerStyle={{ paddingBottom: 24 }}>
             {/* Period selection */}
-            <View className="segmentContainer">
+            <View className="flex-row bg-gray-100 rounded-xl mx-3 mt-5 mb-4 h-11 items-center justify-between px-1">
                 {periods.map((period) => (
                     <Pressable
                         key={period}
-                        style={[
-                            styles.segmentButton,
-                            selectedPeriod === period && styles.segmentButtonActive,
-                        ]}
+                        className={`flex-1 items-center h-9 mx-1 rounded-lg justify-center ${selectedPeriod === period ? 'bg-white shadow-md shadow-black/10' : 'bg-transparent'}`}
                         onPress={() => setSelectedPeriod(period)}
                     >
-                        <Text style={[
-                            styles.segmentText,
-                            selectedPeriod === period && styles.segmentTextActive,
-                        ]}>
+                        <Text className={`text-base font-quicksand-medium ${selectedPeriod === period ? 'text-black font-quicksand-bold' : 'text-gray-400'}`}>
                             {period}
                         </Text>
                     </Pressable>
@@ -51,6 +45,8 @@ export default function CashFlowScreen() {
                     height={170}
                     fromZero
                     showValuesOnTopOfBars={false}
+                    yAxisLabel=""
+                    yAxisSuffix=""
                     chartConfig={{
                         backgroundColor: '#f6f6f6',
                         backgroundGradientFrom: '#f6f6f6',

@@ -1,113 +1,246 @@
-import { View, Text, ScrollView, Image, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
-import { LineChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import useAuthStore from '../../store/auth.store';  // Updated import path
-import clsx from 'clsx';
+import { PieChart } from 'react-native-chart-kit';
 
+interface Transaction {
+    type: string;
+    date: string;
+    amount: number;
+    description: string;
+    predictedCategory: string;
+}
 
-const { width } = Dimensions.get('window');
+const screenWidth = Dimensions.get('window').width;
 
 export default function DashboardScreen() {
-    const { user } = useAuthStore();
-    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-    const profitData = [80, 60, 10, 40, 40, 50, 70];
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Format date string to readable format with fallback for invalid dates
+    function formatDate(dateString: string): string {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return 'N/A';
+        }
+        return date.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    }
+
+    // Format amount as currency
+    function formatAmount(amount: number): string {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: 'INR',
+        }).format(amount);
+    }
+
+    // Optional: color coding for predicted category
+    function categoryColor(category: string | undefined): string {
+        if (!category) {
+            return 'text-gray-100';
+        }
+        switch (category.toLowerCase()) {
+            case 'food':
+                return 'text-green-600';
+            case 'transport':
+                return 'text-blue-600';
+            case 'entertainment':
+                return 'text-purple-600';
+            case 'bills':
+                return 'text-red-600';
+            default:
+                return 'text-gray-600';
+        }
+    }
+
+    interface PieData {
+        name: string;
+        population: number;
+        color: string;
+        legendFontColor: string;
+        legendFontSize: number;
+    }
+
+    // Calculate data for pie charts
+    function calculatePieData(): { pieDataCount: PieData[]; pieDataAmount: PieData[]; pieDataByCategory: PieData[] } {
+        let debitCount = 0;
+        let creditCount = 0;
+        let debitAmount = 0;
+        let creditAmount = 0;
+
+        transactions.forEach((t) => {
+            if (t.type.toLowerCase() === 'debit') {
+                debitCount++;
+                debitAmount += t.amount;
+            } else if (t.type.toLowerCase() === 'credit') {
+                creditCount++;
+                creditAmount += t.amount;
+            }
+        });
+
+        const pieDataCount: PieData[] = [
+            {
+                name: 'Debit',
+                population: debitCount,
+                color: '#f87171', // red-400
+                legendFontColor: '#333',
+                legendFontSize: 14,
+            },
+            {
+                name: 'Credit',
+                population: creditCount,
+                color: '#60a5fa', // blue-400
+                legendFontColor: '#333',
+                legendFontSize: 14,
+            },
+        ];
+
+        const pieDataAmount: PieData[] = [
+            {
+                name: 'Debit',
+                population: debitAmount,
+                color: '#f87171',
+                legendFontColor: '#333',
+                legendFontSize: 14,
+            },
+            {
+                name: 'Credit',
+                population: creditAmount,
+                color: '#60a5fa',
+                legendFontColor: '#333',
+                legendFontSize: 14,
+            },
+        ];
+
+        // New pie data categorized by predictedCategory and amount
+        const categoryMap: { [key: string]: number } = {};
+        transactions.forEach((t) => {
+            const category = t.predictedCategory || 'Unknown';
+            if (!categoryMap[category]) {
+                categoryMap[category] = 0;
+            }
+            categoryMap[category] += t.amount;
+        });
+
+        const colors = ['#f87171', '#60a5fa', '#34d399', '#a78bfa', '#fbbf24', '#f472b6', '#60a5fa'];
+
+        const pieDataByCategory: PieData[] = Object.entries(categoryMap).map(([name, amount], index) => ({
+            name,
+            population: amount,
+            color: colors[index % colors.length],
+            legendFontColor: '#333',
+            legendFontSize: 14,
+        }));
+
+        return { pieDataCount, pieDataAmount, pieDataByCategory };
+    }
+
+    useEffect(() => {
+        async function fetchTransactions() {
+            try {
+                const response = await fetch('https://my-budget-app-4070447009.us-central1.run.app/transactions');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                setTransactions(data);
+            } catch (err) {
+                const error = err as Error;
+                setError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchTransactions();
+    }, []);
+
+    if (loading) {
+        return (
+            <SafeAreaView className="flex-1 justify-center items-center bg-white">
+                <ActivityIndicator size="large" color="#0000ff" />
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView className="flex-1 justify-center items-center bg-white">
+                <Text className="text-red-500">Error: {error}</Text>
+            </SafeAreaView>
+        );
+    }
+
+    const { pieDataCount, pieDataAmount, pieDataByCategory } = calculatePieData();
 
     return (
         <SafeAreaView className="flex-1 bg-white">
             <ScrollView>
-                <View className="flex-row items-center bg-white p-4 pb-2 justify-between">
-                    <View className="w-12 h-12 justify-center items-center">
-                        <Image
-                            source={{
-                                uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDQSTLOMg2AHz1JGAF7OUnRKDwI8hzldzZ6dv3XF56HsFevrP2NoEE6Bi13qYfUrPLT4CaqFl9zwvs-LzuP0feXWNuD4EjvdYFQ9P3wjNpLCludMmpZpVDsVbjk5cNGonRn7wMnJqy_dytcongU3lCbQ2ZGtEIL7EOkxG4sv49NiWsCtacf6H79hacIaZC_-nsRj2e7hui95XyvW6br20ByA1pbtBD9ZgP_KF04AnP_aLIS6W03xtrjXw-Yat-XNBkP2WlOIP9ekjsC"
-                            }}
-                            className="w-8 h-8 rounded-full"
-                        />
-                    </View>
-                    <Text className="font-quicksand-bold text-lg text-dark-100 flex-1 text-center pr-12">
-                        Dashboard
-                    </Text>
-                </View>
-
-                <Text className="font-quicksand-bold text-[22px] text-dark-100 px-4 pb-3 pt-5">
-                    Revenue
-                </Text>
-
-                <View className="px-4 py-6">
-                    <View className="min-w-72 flex-1">
-                        <Text className="font-quicksand-medium text-base text-dark-100">Total Income</Text>
-                        <Text className="font-quicksand-bold text-[32px] text-dark-100">$12,500</Text>
-                        <View className="flex-row gap-1 mb-4">
-                            <Text className="font-quicksand text-base text-gray-100">Last Year</Text>
-                            <Text className="font-quicksand-medium text-base text-success">+15%</Text>
-                        </View>
-
-                        <LineChart
-                            data={{
-                                labels: monthLabels,
-                                datasets: [{
-                                    data: [21, 41, 93, 33, 101, 61, 45]
-                                }]
-                            }}
-                            width={width - 32}
-                            height={180}
+                <View className="flex-row justify-around p-4">
+                    <View>
+                        <Text className="text-center font-semibold mb-2">Debit vs Credit (Count)</Text>
+                        <PieChart
+                            data={pieDataCount}
+                            width={screenWidth / 2.2}
+                            height={220}
                             chartConfig={{
-                                backgroundColor: '#ffffff',
-                                backgroundGradientFrom: '#ffffff',
-                                backgroundGradientTo: '#ffffff',
-                                decimalPlaces: 0,
-                                color: (opacity = 1) => `rgba(135, 135, 135, ${opacity})`,
-                                style: {
-                                    borderRadius: 16
-                                },
-                                propsForBackgroundLines: {
-                                    strokeDasharray: []
-                                }
+                                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                             }}
-                            bezier
-                            style={{
-                                marginVertical: 8,
-                                borderRadius: 16
+                            accessor="population"
+                            backgroundColor="transparent"
+                            paddingLeft="15"
+                            absolute
+                        />
+                    </View>
+                    <View>
+                        <Text className="text-center font-semibold mb-2">Categories (Amount)</Text>
+                        <PieChart
+                            data={pieDataByCategory}
+                            width={screenWidth / 2.2}
+                            height={220}
+                            chartConfig={{
+                                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                             }}
+                            accessor="population"
+                            backgroundColor="transparent"
+                            paddingLeft="15"
+                            absolute
                         />
                     </View>
                 </View>
-
-                <Text className="font-quicksand-bold text-[22px] text-dark-100 px-4 pb-3 pt-5">
-                    Budget
-                </Text>
-
-                <View className="p-4">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <Text className="font-quicksand-medium text-base text-dark-100">Spending</Text>
-                        <Text className="font-quicksand text-sm text-dark-100">750</Text>
-                    </View>
-                    <View className="h-2 bg-white-100 rounded-full overflow-hidden">
-                        <View className="h-full bg-dark-100 rounded-full" style={{ width: '75%' }} />
-                    </View>
-                    <Text className="font-quicksand text-sm text-gray-100 mt-3">Remaining</Text>
-                </View>
-
-                <Text className="font-quicksand-bold text-[22px] text-dark-100 px-4 pb-3 pt-5">
-                    Balances
-                </Text>
-
-                {['Checking', 'Savings'].map((type, index) => (
-                    <View key={type} className="flex-row items-center gap-4 px-4 py-2 min-h-[72px]">
-                        <View className="w-12 h-12 bg-white-100 rounded-lg items-center justify-center">
-                            <MaterialCommunityIcons name="bank" size={24} color="#181C2E" />
+                <ScrollView horizontal className="p-4">
+                    {transactions.length === 0 ? (
+                        <Text className="text-center text-gray-500">No transactions found.</Text>
+                    ) : (
+                        <View className="min-w-full border border-gray-300 rounded-lg bg-white shadow-md">
+                            <View className="flex-row bg-gray-100 border-b border-gray-300 sticky top-0 z-10">
+                                <Text className="w-2/12 p-4 font-semibold border-r border-gray-300">Type</Text>
+                                <Text className="w-2/12 p-4 font-semibold border-r border-gray-300">Date</Text>
+                                <Text className="w-2/12 p-4 font-semibold border-r border-gray-300">Amount</Text>
+                                <Text className="w-3/12 p-4 font-semibold border-r border-gray-300">Description</Text>
+                                <Text className="w-3/12 p-4 font-semibold">Predicted Category</Text>
+                            </View>
+                            {transactions.map((item, index) => (
+                                <View
+                                    key={index}
+                                    className={`flex-row border-b border-gray-300 ${
+                                        index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                                    }`}
+                                >
+                                    <Text className="w-2/12 p-4 border-r border-gray-300">{item.type}</Text>
+                                    <Text className="w-2/12 p-4 border-r border-gray-300">{formatDate(item.date)}</Text>
+                                    <Text className="w-2/12 p-4 border-r border-gray-300">{formatAmount(item.amount)}</Text>
+                                    <Text className="w-3/12 p-4 border-r border-gray-300">{item.description}</Text>
+                                    <Text className={`w-3/12 p-4 ${categoryColor(item.predictedCategory)}`}>{item.predictedCategory}</Text>
+                                </View>
+                            ))}
                         </View>
-                        <View>
-                            <Text className="font-quicksand-medium text-base text-dark-100">
-                                ${type === 'Checking' ? '5,200' : '10,500'}
-                            </Text>
-                            <Text className="font-quicksand text-sm text-gray-100">{type}</Text>
-                        </View>
-                    </View>
-                ))}
+                    )}
+                </ScrollView>
             </ScrollView>
         </SafeAreaView>
     );
