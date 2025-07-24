@@ -393,18 +393,18 @@ export default function DashboardScreen() {
 
                 <ScrollView contentContainerStyle={{ padding: 16 }}>
                     {/* Summary Cards */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginRight: 8 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap' }}>
+                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
                             <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Total Income</Text>
                             <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(totalIncome)}</Text>
                             <Text style={{ color: changeColor(incomeChange), fontSize: 16, fontWeight: '500' }}>{incomeChange}</Text>
                         </View>
-                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4 }}>
+                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
                             <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Total Expenses</Text>
                             <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(totalExpenses)}</Text>
                             <Text style={{ color: changeColor(expensesChange), fontSize: 16, fontWeight: '500' }}>{expensesChange}</Text>
                         </View>
-                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginLeft: 8 }}>
+                        <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
                             <Text style={{ color: '#101518', fontSize: 16, fontWeight: '500', marginBottom: 4 }}>Net Profit</Text>
                             <Text style={{ color: '#101518', fontSize: 24, fontWeight: '700', marginBottom: 4 }}>{formatAmount(netProfit)}</Text>
                             <Text style={{ color: changeColor(profitChange), fontSize: 16, fontWeight: '500' }}>{profitChange}</Text>
