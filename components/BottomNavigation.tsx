@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link, usePathname } from 'expo-router';
-import { House, CurrencyDollar, ChartBar, PresentationChart, Robot } from '@/components/icons';
+import { House, Receipt, ChartBar, PresentationChart, Robot } from '@/components/icons';
 
 type TabRoute = {
     path: `/(tabs)${string}`;
@@ -12,7 +12,7 @@ type TabRoute = {
 
 const TABS: TabRoute[] = [
     { path: '/(tabs)', icon: House, label: 'Dashboard' },
-    { path: '/(tabs)/cash-flow', icon: CurrencyDollar, label: 'Cash Flow' },
+    { path: '/(tabs)/cash-flow', icon: Receipt, label: 'Transactions' },
     { path: '/(tabs)/budget', icon: ChartBar, label: 'Budget' },
     { path: '/(tabs)/investments', icon: PresentationChart, label: 'Investments' },
     { path: '/(tabs)/chatbot', icon: Robot, label: 'Chatbot' }
