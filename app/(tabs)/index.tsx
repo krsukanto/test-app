@@ -250,9 +250,9 @@ export default function DashboardScreen() {
             return;
         }
 
-        // Launch image picker
+        // Launch image picker without base64 to avoid mobile issues
         const pickerResult = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: 'Images',
             allowsEditing: false,
             quality: 1,
             base64: true,
@@ -398,27 +398,26 @@ export default function DashboardScreen() {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
             <View style={{ flex: 1 }}>
-                {/* Header */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 20, fontWeight: '700', color: '#101518' }}>Upload Transactions</Text>
-                    <TouchableOpacity
-                        style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
-                        onPress={pickImageAndUpload}
-                        disabled={uploading}
-                    >
-                        <Svg width={24} height={24} fill="#101518" viewBox="0 0 24 24">
-                            <Path d="M19 15v4H5v-4H3v4a2 2 0 002 2h14a2 2 0 002-2v-4h-2zM12 3l-5 5h3v6h4v-6h3l-5-5z" />
-                        </Svg>
-                    </TouchableOpacity>
-                </View>
-
-                {uploading && (
-                    <View style={{ padding: 10, backgroundColor: '#e0e0e0', alignItems: 'center' }}>
-                        <Text>Uploading image...</Text>
+                <ScrollView contentContainerStyle={{ padding: 0 }}>
+                    {/* Header */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9fafb', paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'space-between' }}>
+                        <Text style={{ fontSize: 20, fontWeight: '700', color: '#101518' }}>Upload Transactions</Text>
+                        <TouchableOpacity
+                            style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
+                            onPress={pickImageAndUpload}
+                            disabled={uploading}
+                        >
+                            <Svg width={24} height={24} fill="#101518" viewBox="0 0 24 24">
+                                <Path d="M19 15v4H5v-4H3v4a2 2 0 002 2h14a2 2 0 002-2v-4h-2zM12 3l-5 5h3v6h4v-6h3l-5-5z" />
+                            </Svg>
+                        </TouchableOpacity>
                     </View>
-                )}
+                    {uploading && (
+                        <View style={{ padding: 10, backgroundColor: '#e0e0e0', alignItems: 'center' }}>
+                            <Text>Uploading image...</Text>
+                        </View>
+                    )}
 
-                <ScrollView contentContainerStyle={{ padding: 16 }}>
                     {/* Summary Cards */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap' }}>
                         <View style={{ flex: 1, minWidth: 158, backgroundColor: '#eaedf1', borderRadius: 12, padding: 16, marginHorizontal: 4, marginBottom: 8 }}>
